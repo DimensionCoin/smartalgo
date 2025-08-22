@@ -74,7 +74,7 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t border-white/10">
         <div className="container mx-auto max-w-6xl px-6 py-8 flex items-center justify-between text-xs text-white/50">
-          <span>© {new Date().getFullYear()} Backtester</span>
+          <span>© {new Date().getFullYear()} smartalgo</span>
           <div className="flex gap-4">
             <a className="hover:text-white/80" href="#">
               Privacy
