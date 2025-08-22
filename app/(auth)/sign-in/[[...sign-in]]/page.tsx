@@ -34,20 +34,7 @@ export default function SignInPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] bg-cyan-500/5 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Header with logo */}
-      <header className="relative z-10 p-4 flex justify-center md:justify-start md:px-8">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="relative">
-            <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-teal-400 via-cyan-400 to-indigo-500 opacity-75 blur group-hover:opacity-100 transition duration-300"></div>
-            <div className="relative bg-zinc-900 rounded-full p-2">
-              <TrendingUp className="h-5 w-5 text-teal-400" />
-            </div>
-          </div>
-          <span className="font-bold text-xl bg-clip-text text-transparent bg-gradient-to-r from-teal-400 via-cyan-400 to-indigo-500">
-            SCAR
-          </span>
-        </Link>
-      </header>
+      
 
       <main className="flex-1 flex flex-col items-center justify-center relative z-10 px-4 py-8">
         <motion.div
