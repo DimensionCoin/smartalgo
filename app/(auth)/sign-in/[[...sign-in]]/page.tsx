@@ -2,8 +2,6 @@
 
 import { SignIn } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
-import { TrendingUp } from "lucide-react";
-import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function SignInPage() {

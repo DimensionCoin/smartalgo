@@ -1,7 +1,7 @@
 // modals/user.modal.ts
 import mongoose, { Schema } from "mongoose";
 
-// ---- Subdocument schema (no generics here) ----
+// Subdocument schema
 const CreditHistorySchema = new Schema(
   {
     coin: { type: String, required: true }, // e.g. "SOL"
@@ -12,16 +12,14 @@ const CreditHistorySchema = new Schema(
   { _id: true }
 );
 
-// Infer the TS type from the schema (prevents complex union explosions)
 export type CreditHistoryEntry = mongoose.InferSchemaType<
   typeof CreditHistorySchema
 >;
 
-// ---- Parent schema (also no generics) ----
 const UserSchema = new Schema(
   {
-    clerkId: { type: String, required: true, unique: true },
-    email: { type: String, required: true, unique: true },
+    clerkId: { type: String, required: true, unique: true, index: true },
+    email: { type: String, required: true, unique: true, index: true },
     firstName: { type: String, default: "" },
     lastName: { type: String, default: "" },
 
@@ -31,10 +29,11 @@ const UserSchema = new Schema(
       default: "free",
     },
     customerId: { type: String, default: "" },
-    credits: { type: Number, required: true, default: 10 },
-    topCoins: { type: [String], default: [] },
 
-    // Important: default [] so it's always a DocumentArray
+    // Starter credits live here (default = 10)
+    credits: { type: Number, required: true, default: 10 },
+
+    topCoins: { type: [String], default: [] },
     creditHistory: { type: [CreditHistorySchema], default: [] },
   },
   { timestamps: true }
@@ -47,7 +46,7 @@ UserSchema.index({ "creditHistory.timestamp": -1 });
 
 export type IUser = mongoose.InferSchemaType<typeof UserSchema>;
 
-// Model bootstrap without extra generics (avoids TS churn)
+// Bootstrap model safely for hot reload/dev
 let User: mongoose.Model<IUser>;
 try {
   User = mongoose.model<IUser>("User");
