@@ -1,11 +1,10 @@
-// modals/user.modal.ts
 import mongoose, { Schema } from "mongoose";
 
 // Subdocument schema
 const CreditHistorySchema = new Schema(
   {
-    coin: { type: String, required: true }, // e.g. "SOL"
-    strategy: { type: String, required: true }, // e.g. "rsi_macd_bb_v1"
+    coin: { type: String, required: true },
+    strategy: { type: String, required: true },
     creditsUsed: { type: Number, required: true, min: 1 },
     timestamp: { type: Date, default: Date.now },
   },
@@ -18,8 +17,8 @@ export type CreditHistoryEntry = mongoose.InferSchemaType<
 
 const UserSchema = new Schema(
   {
-    clerkId: { type: String, required: true, unique: true, index: true },
-    email: { type: String, required: true, unique: true, index: true },
+    clerkId: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true },
     firstName: { type: String, default: "" },
     lastName: { type: String, default: "" },
 
@@ -30,7 +29,6 @@ const UserSchema = new Schema(
     },
     customerId: { type: String, default: "" },
 
-    // Starter credits live here (default = 10)
     credits: { type: Number, required: true, default: 10 },
 
     topCoins: { type: [String], default: [] },
@@ -39,14 +37,13 @@ const UserSchema = new Schema(
   { timestamps: true }
 );
 
-// Helpful indexes
+// ✅ Keep only these index declarations
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ clerkId: 1 }, { unique: true });
 UserSchema.index({ "creditHistory.timestamp": -1 });
 
 export type IUser = mongoose.InferSchemaType<typeof UserSchema>;
 
-// Bootstrap model safely for hot reload/dev
 let User: mongoose.Model<IUser>;
 try {
   User = mongoose.model<IUser>("User");

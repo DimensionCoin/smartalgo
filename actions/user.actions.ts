@@ -1,10 +1,33 @@
 // actions/user.actions.ts
 "use server";
 
-import User, { type IUser } from "@/modals/user.modal";
+import User from "@/modals/user.modal";
 import { connect } from "@/db";
 
-/** Typed input for creating a user (no `any`) */
+/** DTOs returned to the client (plain JSON, dates as strings) */
+export type CreditHistoryEntryDTO = {
+  coin: string;
+  strategy: string;
+  creditsUsed: number;
+  timestamp: string; // ISO
+};
+
+export type UserDTO = {
+  _id: string;
+  clerkId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  subscriptionTier: "free" | "basic";
+  customerId: string;
+  credits: number;
+  topCoins: string[];
+  creditHistory: CreditHistoryEntryDTO[];
+  createdAt: string; // ISO
+  updatedAt: string; // ISO
+};
+
+/** Input for creation */
 export type CreateUserInput = {
   clerkId: string;
   email: string;
@@ -12,17 +35,18 @@ export type CreateUserInput = {
   lastName?: string;
   subscriptionTier?: "free" | "basic";
   customerId?: string;
-  // credits optional; if omitted, schema default (10) applies
-  credits?: number;
+  credits?: number; // optional; schema default is 10
 };
+
+/** Helper: cast JSON.parse(JSON.stringify(...)) to DTO */
+function toDTO<T>(doc: unknown): T {
+  return JSON.parse(JSON.stringify(doc)) as T;
+}
 
 /**
  * Create (or fetch) a user by clerkId. Safe for webhook retries.
- * Ensures credits default = 10 on first insert (schema also enforces).
  */
-export async function createUser(
-  user: CreateUserInput
-): Promise<IUser & { _id: string }> {
+export async function createUser(user: CreateUserInput): Promise<UserDTO> {
   await connect();
 
   const doc = await User.findOneAndUpdate(
@@ -30,41 +54,36 @@ export async function createUser(
     {
       $setOnInsert: {
         clerkId: user.clerkId,
-        email: user.email,
+        email: user.email.toLowerCase().trim(),
         firstName: user.firstName ?? "",
         lastName: user.lastName ?? "",
         subscriptionTier: user.subscriptionTier ?? "free",
         customerId: user.customerId ?? "",
-        credits: user.credits ?? undefined, // if provided, use it; else let schema default
+        credits: user.credits ?? undefined, // allow schema default to apply if undefined
         topCoins: [],
       },
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  return JSON.parse(JSON.stringify(doc)) as IUser & { _id: string };
+  return toDTO<UserDTO>(doc);
 }
 
-/** Fetch by Clerk ID */
-export async function getUser(
-  userId: string
-): Promise<(IUser & { _id: string }) | null> {
+/** Fetch by Clerk ID (returns DTO with date strings) */
+export async function getUser(userId: string): Promise<UserDTO | null> {
   await connect();
   const user = await User.findOne({ clerkId: userId });
-  return user
-    ? (JSON.parse(JSON.stringify(user)) as IUser & { _id: string })
-    : null;
+  return user ? toDTO<UserDTO>(user) : null;
 }
 
 /**
- * Deduct credits for a backtest and log coin + strategy.
- * Uses a single atomic update to prevent race conditions.
+ * Deduct credits for a backtest and log coin + strategy (atomic).
  */
 export async function consumeBacktestCredits(
   userId: string,
   amount: number,
   opts: { coin: string; strategy: string }
-): Promise<IUser & { _id: string }> {
+): Promise<UserDTO> {
   await connect();
   if (amount <= 0) throw new Error("Amount must be > 0");
 
@@ -82,8 +101,8 @@ export async function consumeBacktestCredits(
       $push: {
         creditHistory: {
           $each: [entry],
-          $position: 0, // newest first
-          $slice: 50, // keep latest 50 entries
+          $position: 0,
+          $slice: 50,
         },
       },
     },
@@ -91,14 +110,14 @@ export async function consumeBacktestCredits(
   );
 
   if (!updated) throw new Error("User not found or not enough credits");
-  return JSON.parse(JSON.stringify(updated)) as IUser & { _id: string };
+  return toDTO<UserDTO>(updated);
 }
 
-/** Add credits */
+/** Add credits (atomic) */
 export async function addCredits(
   userId: string,
   amount: number
-): Promise<IUser & { _id: string }> {
+): Promise<UserDTO> {
   await connect();
   if (amount <= 0) throw new Error("Amount must be > 0");
 
@@ -109,7 +128,7 @@ export async function addCredits(
   );
 
   if (!updated) throw new Error("User not found");
-  return JSON.parse(JSON.stringify(updated)) as IUser & { _id: string };
+  return toDTO<UserDTO>(updated);
 }
 
 /** Check available credits */
@@ -145,5 +164,5 @@ export async function updateUserTopCoins(
   );
 
   if (!user) throw new Error("User not found");
-  return user.topCoins;
+  return toDTO<{ topCoins: string[] }>(user).topCoins;
 }

@@ -1,4 +1,7 @@
 // app/api/webhooks/clerk/route.ts
+
+export const runtime = "nodejs"; // ensure Node runtime on Vercel
+
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import {
